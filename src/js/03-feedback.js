@@ -1,52 +1,44 @@
 import throttle from 'lodash.throttle';
 
-const KEY_FORM_LOCAL_STORAGE = 'feedback-form-state';
-
 const refs = {
   form: document.querySelector('.feedback-form'),
 };
+const KEY_LOCAL_STORAGE = 'feedback-form-state';
 
-const formData = {};
+addLocalData();
 
-const setValueInLocalStorage = event => {
-  try {
-    formData[event.target.name] = event.target.value;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-  } catch (error) {
-    console.log(error.message);
-  }
+const formData = {
+  email: refs.form.email.value,
+  message: refs.form.message.value,
 };
 
-const onInputFormData = event => {
-  formData[event.target.name] = event.target.value;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-};
+refs.form.addEventListener('input', throttle(onFormInput, 500));
+refs.form.addEventListener('submit', onFormSubmit);
 
-form.addEventListener('input', throttle(onInputFormData, 500));
-
-const getValueFromLocalStorage = key => {
-  try {
-    const getValue = localStorage.getItem(key);
-    return getValue === null ? undefined : JSON.parse(getValue);
-  } catch (error) {
-    console.log(error.message);
-  }
-};
-
-const formFromStorage = getValueFromLocalStorage(KEY_FORM_LOCAL_STORAGE);
-
-if (formFromStorage) {
-  for (const key in formFromStorage) {
-    form.elements[key].value = formFromStorage[key];
-    formData[key] = formFromStorage[key];
-  }
+function onFormInput(e) {
+  (formData[e.target.name] = e.target.value),
+    localStorage.setItem(KEY_LOCAL_STORAGE, JSON.stringify(formData));
 }
 
-const onSubmitForm = e => {
+function onFormSubmit(e) {
   e.preventDefault();
 
-  e.currentTarget.reset();
-  localStorage.removeItem(KEY_FORM_LOCAL_STORAGE);
-};
+  const dataSubmit = {
+    email: e.currentTarget.email.value,
+    massage: e.currentTarget.message.value,
+  };
 
-form.addEventListener('submit', onSubmitForm);
+  console.log(dataSubmit);
+
+  localStorage.removeItem(KEY_LOCAL_STORAGE);
+  refs.form.reset();
+}
+
+function addLocalData() {
+  const localData = JSON.parse(localStorage.getItem(KEY_LOCAL_STORAGE));
+
+  if (!localData) return;
+
+  if (localData.email) refs.form.email.value = localData.email;
+  if (localData.message) refs.form.message.value = localData.message;
+}
