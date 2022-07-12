@@ -1,51 +1,52 @@
-'use strict';
+import throttle from 'lodash.throttle';
 
-import localStorageService from './localstorage';
-const CONTACT_FORM_LOCAL_STORAGE_KEY = 'feedback-form-state';
-const contactFormEl = document.querySelector('.feedback-form');
+const KEY_FORM_LOCAL_STORAGE = 'feedback-form-state';
 
-const dataForm = {};
-
-console.log(localStorageService);
-
-const handleFormChange = e => {
-  const { target } = e;
-
-  const elementTargetName = target.name;
-  const elementTargetValue = target.value;
-
-  dataForm[elementTargetName] = elementTargetValue;
-
-  localStorageService.save(CONTACT_FORM_LOCAL_STORAGE_KEY, dataForm);
+const refs = {
+  form: document.querySelector('.feedback-form'),
 };
 
-const fillContactForm = () => {
-  const formData = localStorageService.load(CONTACT_FORM_LOCAL_STORAGE_KEY);
+const formData = {};
 
-  console.dir(contactFormEl.elements);
-
-  for (const key in formData) {
-    contactFormEl.elements[key].value = formData[key];
-    /* const inputEl = contactFormEl.elements[key];
-    const inputValue = formData[key];
-    inputEl.value = inputValue; */
+const setValueInLocalStorage = event => {
+  try {
+    formData[event.target.name] = event.target.value;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+  } catch (error) {
+    console.log(error.message);
   }
 };
 
-const handleContactFormSybmit = e => {
+const onInputFormData = event => {
+  formData[event.target.name] = event.target.value;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
+};
+
+form.addEventListener('input', throttle(onInputFormData, 500));
+
+const getValueFromLocalStorage = key => {
+  try {
+    const getValue = localStorage.getItem(key);
+    return getValue === null ? undefined : JSON.parse(getValue);
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
+const formFromStorage = getValueFromLocalStorage(KEY_FORM_LOCAL_STORAGE);
+
+if (formFromStorage) {
+  for (const key in formFromStorage) {
+    form.elements[key].value = formFromStorage[key];
+    formData[key] = formFromStorage[key];
+  }
+}
+
+const onSubmitForm = e => {
   e.preventDefault();
 
-  //   localStorage.removeItem(CONTACT_FORM_LOCAL_STORAGE_KEY);
-  localStorageService.remove(CONTACT_FORM_LOCAL_STORAGE_KEY);
   e.currentTarget.reset();
-  for (const key in dataForm) {
-    delete dataForm[key];
-  }
-
-  console.log(dataForm);
+  localStorage.removeItem(KEY_FORM_LOCAL_STORAGE);
 };
 
-fillContactForm();
-
-contactFormEl.addEventListener('input', throttle(handleFormChange, 500));
-contactFormEl.addEventListener('submit', handleContactFormSybmit);
+form.addEventListener('submit', onSubmitForm);

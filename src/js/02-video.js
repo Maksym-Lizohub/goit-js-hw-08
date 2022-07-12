@@ -1,36 +1,40 @@
 import Vimeo from '@vimeo/player';
-
-const iframe = document.querySelector('iframe');
-const player = new Vimeo(iframe);
+import throttle from 'lodash.throttle';
 
 const KEY_LOCAL_STORAGE = 'videoplayer-current-time';
 
-player.on('play', function () {
-  console.log('played the video!');
-});
+const iframeRef = document.querySelector('iframe');
+const player = new Vimeo(iframeRef);
 
-/* получить текущее время */
+const setTimeInLocalStorage = (key, time) => {
+  try {
+    const timeInJson = JSON.stringify(time);
+    localStorage.setItem(key, timeInJson);
+  } catch (error) {
+    console.log(error.message);
+  }
+};
 
-player.on('timeupdate', function (data) {
-  console.log('timeupdate :>> ', data);
-  // data is an object containing properties specific to that event
-});
+const onSetTimeInlocalStorage = e => {
+  const curretTimeOnPlaeyr = e.seconds;
+  setTimeInLocalStorage(KEY_LOCAL_STORAGE, curretTimeOnPlaeyr);
+};
 
-/* установить начальное время */
+const getTimeFromLocalStorage = key => {
+  try {
+    const time = localStorage.getItem(key);
+
+    return time === null ? undefined : JSON.parse(time);
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
+const timeAtStart = getTimeFromLocalStorage(KEY_LOCAL_STORAGE);
+
+player.on('timeupdate', throttle(onSetTimeInlocalStorage, 1000));
 
 player
-  .setCurrentTime(KEY_LOCAL_STORAGE)
-  .then(function (seconds) {
-    // seconds = the actual time that the player seeked to
-  })
-  .catch(function (error) {
-    switch (error.name) {
-      case 'RangeError':
-        // the time was less than 0 or greater than the video’s duration
-        break;
-
-      default:
-        // some other error occurred
-        break;
-    }
-  });
+  .setCurrentTime(timeAtStart)
+  .then(function (seconds) {})
+  .catch(function (error) {});
